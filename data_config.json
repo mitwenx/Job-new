@@ -1,0 +1,5 @@
+{
+"api_base_url": "https://raw.githubusercontent.com/mitwenx/Job-data/main/",
+"jobs_endpoint": "jobs/latest.json",
+"results_endpoint": "results/latest.json"
+}
