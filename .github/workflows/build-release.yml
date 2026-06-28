@@ -1,0 +1,43 @@
+# A more descriptive name for the workflow
+name: Build Android Application
+on:
+# Triggers the workflow on push events for the main and master branches
+push:
+branches: [ "main", "master" ]
+# Allows you to run this workflow manually from the Actions tab
+workflow_dispatch:
+jobs:
+build:
+runs-on: ubuntu-latest
+# FIX: Add permissions for the GITHUB_TOKEN to allow downloading actions and checking out code.
+# This is the direct solution for the "401 Unauthorized" error.
+permissions:
+contents: read
+actions: read
+steps:
+# Step 1: Checks out your repository code so the job can access it
+- name: Checkout Repository
+uses: actions/checkout@v4
+# Step 2: Set up JDK 17, which is recommended for the Android Gradle Plugin version we are using
+- name: Set up JDK 17
+uses: actions/setup-java@v4
+with:
+java-version: '17'
+distribution: 'temurin'
+cache: gradle
+# Step 3: Grant execute permission to the gradlew script
+- name: Grant execute permission for gradlew
+run: chmod +x ./gradlew
+# Step 4: Build the debug APK with full error logs
+# FIX: Changed 'assembleProdDebug' to 'assembleDebug' to match our project structure.
+# FIX: Added '--stacktrace' flag to show ALL logs and errors in a single run, as you requested.
+- name: Build Debug APK with Full Logs
+run: ./gradlew assembleDebug --stacktrace
+# Step 5: Upload the generated APK as a build artifact
+- name: Upload APK Artifact
+uses: actions/upload-artifact@v4
+with:
+# FIX: Changed the artifact name for clarity
+name: app-debug-apk
+# FIX: Corrected the path to match the output of the 'assembleDebug' command
+path: app/build/outputs/apk/debug/app-debug.apk
