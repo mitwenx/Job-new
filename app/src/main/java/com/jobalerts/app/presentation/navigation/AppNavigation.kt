@@ -36,6 +36,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.jobalerts.app.JobAlertsApp
@@ -86,6 +87,7 @@ fun AppNavigation(initialJobId: String? = null) {
     }
 }
 
+@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 private fun AppContent(initialJobId: String? = null) {
     val navController = rememberNavController()
