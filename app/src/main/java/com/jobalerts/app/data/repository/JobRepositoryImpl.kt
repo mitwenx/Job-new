@@ -32,39 +32,41 @@ class JobRepositoryImpl(
 
     private val _jobsFlow = MutableStateFlow<List<JobPost>>(emptyList())
 
-    override suspend fun syncLatestJobs() = withContext(Dispatchers.IO) {
-        val config = AppConfigManager.fetchConfig()
-            ?: throw IllegalStateException("Could not fetch app config. Check network.")
+    override suspend fun syncLatestJobs() {
+        withContext(Dispatchers.IO) {
+            val config = AppConfigManager.fetchConfig()
+                ?: throw IllegalStateException("Could not fetch app config. Check network.")
 
-        val indexUrl = config.apiBaseUrl + config.jobsEndpoint
-        val indexJson = apiService.getJobsIndex(indexUrl).string()
-        val jsonArray = JSONArray(indexJson)
+            val indexUrl = config.apiBaseUrl + config.jobsEndpoint
+            val indexJson = apiService.getJobsIndex(indexUrl).string()
+            val jsonArray = JSONArray(indexJson)
 
-        val parsedJobs = mutableListOf<JobPost>()
-        for (i in 0 until jsonArray.length()) {
-            val obj = jsonArray.getJSONObject(i)
-            val jobId = obj.getString("id")
-            val fileName = obj.getString("file")
-            val category = obj.optString("category", "UPDATE")
-            val title = obj.optString("title", "Job Notification")
-            val qualTag = obj.optString("qualification_tag", "Any")
-            val lastDate = obj.optString("last_date", "TBD")
+            val parsedJobs = mutableListOf<JobPost>()
+            for (i in 0 until jsonArray.length()) {
+                val obj = jsonArray.getJSONObject(i)
+                val jobId = obj.getString("id")
+                val fileName = obj.getString("file")
+                val category = obj.optString("category", "UPDATE")
+                val title = obj.optString("title", "Job Notification")
+                val qualTag = obj.optString("qualification_tag", "Any")
+                val lastDate = obj.optString("last_date", "TBD")
 
-            try {
-                val fileUrl = config.apiBaseUrl + "jobs/$fileName"
-                val markdown = apiService.getRawMarkdown(fileUrl).string()
-                parsedJobs.add(
-                    JobMarkdownParser.parse(
-                        markdown, jobId, category, title, qualTag, lastDate
+                try {
+                    val fileUrl = config.apiBaseUrl + "jobs/$fileName"
+                    val markdown = apiService.getRawMarkdown(fileUrl).string()
+                    parsedJobs.add(
+                        JobMarkdownParser.parse(
+                            markdown, jobId, category, title, qualTag, lastDate
+                        )
                     )
-                )
-            } catch (e: Exception) {
-                Log.w("JobRepo", "Skipping $jobId — ${e.message}")
+                } catch (e: Exception) {
+                    Log.w("JobRepo", "Skipping $jobId — ${e.message}")
+                }
             }
-        }
 
-        _jobsFlow.value = parsedJobs
-        Log.d("JobRepo", "Sync done: ${parsedJobs.size} jobs")
+            _jobsFlow.value = parsedJobs
+            Log.d("JobRepo", "Sync done: ${parsedJobs.size} jobs")
+        }
     }
 
     override fun getJobs(): Flow<List<JobPost>> = _jobsFlow.asStateFlow()
